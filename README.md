@@ -12,8 +12,6 @@
 - The only way I've been able to find to run guile as a native executable is to create an accompanying c wrapper file,
     compiling this file, within which it utilizes the libguile which looks more or less like the [example](https://www.gnu.org/software/guile/manual/guile.html#A-Sample-Guile-Main-Program) from the manual, except that I'm using the (`scm_c_use_module`)[https://www.gnu.org/software/guile/manual/guile.html#index-scm_005fc_005fuse_005fmodule] function.
     * For namespace concerns I want to use modules for every file that will be designate as a compile TARGET except for tests
-      - [ ] TODO: handle tests differently within the Makefile, so as not to use `scm_use_module` and just load the .scm file
-        * FIX: this literally does not work at present.
     * These files are created at build time and targets are placed in the `Makefile` TARGETS variable
       - As part of the recipe, a c file is generated
 
@@ -66,3 +64,10 @@
 ```
 >_: make clean
 ```
+
+### Testing
+- testing a target, `hello` for example, can be accomplished by invoking `make test-hello`
+  * this will:
+    1. compile hello.scm into hello.go, create the c linking code and build an executable for `hello`
+    2. compile hello-test.scm into hello-test.go, create the c linking code and build an executable for `hello-test`
+    3. execute the hello-test executable

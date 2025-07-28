@@ -16,15 +16,12 @@ export GUILE_LOAD_PATH := $(ARTIFACTS_DIR)
 ##   it does this by compiling a c file (generated below) that links libguile and initializes scheme with the contents 
 ##   of the $target .scm file
 $(foreach t,$(TARGETS),\
-	$(eval $(t):make-exe-dir make-artifacts-dir $(ARTIFACTS_DIR)/$(t).c $(COMPILED_DIR)/$(t).go $(t).scm; @$(CC) -o $(EXE_DIR)/$(t) $(ARTIFACTS_DIR)/$(t).c $(shell guile-config compile) $(shell guile-config link))\
+	$(eval $(t):make-exe-dir make-artifacts-dir $(ARTIFACTS_DIR)/$(t).c $(COMPILED_DIR)/$(t).go; @$(CC) -o $(EXE_DIR)/$(t) $(ARTIFACTS_DIR)/$(t).c $(shell guile-config compile) $(shell guile-config link))\
 )
-
-# TODO: do a build-%:
 
 all: $(TARGETS)
 
-# TODO: add build-%
-.PHONY: all clean run-% make-artifacts-dir make-exe-dir
+.PHONY: all clean test-% run-% make-artifacts-dir make-exe-dir 
 
 make-artifacts-dir:
 	@test -d $(ARTIFACTS_DIR) || mkdir $(ARTIFACTS_DIR)
@@ -42,7 +39,11 @@ $(COMPILED_DIR)/%.go: %.scm | make-artifacts-dir
 	@echo "static void inner_main(void *data, int _argc, char **_argv) {" >> $@
 	@echo "  (void) _argc;" >> $@
 	@echo "  (void) _argv;" >> $@
-	@echo '  scm_c_use_module("$(notdir $(basename $@))");' >> $@
+	@if echo $(notdir $(basename $@)) | grep -q test; then \
+		echo '  scm_c_primitive_load("$(notdir $(basename $@)).scm");' >> $@; \
+	else \
+		echo '  scm_c_use_module("$(notdir $(basename $@))");' >> $@; \
+	fi
 	@echo "}" >> $@
 	@echo "int main(int argc, char **argv) {" >> $@
 	@echo "  scm_boot_guile(argc, argv, inner_main, NULL);" >> $@
@@ -54,6 +55,11 @@ $(COMPILED_DIR)/%.go: %.scm | make-artifacts-dir
 run-%:
 	@GUILE_LOAD_PATH=$(GUILE_LOAD_PATH) GUILE_LOAD_COMPILED_PATH=$(GUILE_LOAD_COMPILED_PATH) $(EXE_DIR)/$*
 
+test-%:
+	@$(MAKE) --silent $*
+	@$(MAKE) --silent $*-test
+	@$(MAKE) --silent run-$*-test
+
 ## This utility recipe cleans up anything made by the build commands
 clean:
-	@rm -rf $(ARTIFACTS_DIR)
+	@rm -rf $(ARTIFACTS_DIR) *.log
