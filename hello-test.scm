@@ -9,7 +9,7 @@
  (hi))
 
 (test-equal "test-named-hello"
- "hello bitch\n"
- (hi "bitch"))
+ "hello nice person\n"
+ (hi "nice person"))
 
 (test-end "harness")
